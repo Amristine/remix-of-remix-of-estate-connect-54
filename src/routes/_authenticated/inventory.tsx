@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building, Plus, Trash2, Pencil } from "lucide-react";
+import { Building, CalendarCheck, Plus, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
 import { PROPERTY_TYPES, formatBudget, type PropertyType } from "@/lib/crm";
@@ -140,14 +140,20 @@ function InventoryPage() {
                   <td className="px-4 tabular-nums">{formatBudget(u.price)}</td>
                   <td className="px-4"><StatusBadge status={u.status} /></td>
                   <td className="px-4">{u.leads?.name ?? "—"}</td>
-                  <td className="px-4 text-right">
-                    {u.status === "Available" && <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => navigate({ to: "/deals", search: { leadId: u.lead_id ?? undefined, unitId: u.id, dealId: undefined } })}>Book unit</Button>}
-                    {me?.isAdmin && (
-                      <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(u)} aria-label="Edit unit"><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(u.id)} aria-label="Delete unit"><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    )}
+                  <td className="px-4">
+                    <div className="flex items-center justify-end gap-1">
+                      {u.status === "Available" && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-gold hover:text-gold" title="Book unit" aria-label="Book unit" onClick={() => navigate({ to: "/deals", search: { leadId: u.lead_id ?? undefined, unitId: u.id, dealId: undefined } })}>
+                          <CalendarCheck className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {me?.isAdmin && (
+                        <>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditing(u)} aria-label="Edit unit"><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => remove(u.id)} aria-label="Delete unit"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
