@@ -74,7 +74,6 @@ function LeadSourceChart({ rows }: { rows: SourceRow[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <span>Inquiry volume</span>
         <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-1.5 font-semibold"><i className="size-2.5 rounded-full bg-primary" /> Total</span>
           <span className="inline-flex items-center gap-1.5 font-semibold"><i className="size-2.5 rounded-full bg-gold" /> Booked</span>
         </div>
       </div>
