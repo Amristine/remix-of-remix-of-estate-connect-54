@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -16,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StatusBadge, UserName } from "./common";
 import { LeadFields, leadToForm, validateLead, type Lead, type LeadFormValues } from "./LeadForm";
+import { LeadUnits } from "./LeadUnits";
+import { getMilestoneState } from "@/lib/deals";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   note: StickyNote,
@@ -42,6 +45,7 @@ export function LeadDetail({
   const [fuDate, setFuDate] = useState("");
   const [fuTime, setFuTime] = useState("11:00");
   const [fuRemark, setFuRemark] = useState("");
+  const [fuKind, setFuKind] = useState<"call" | "visit">("call");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -60,6 +64,18 @@ export function LeadDetail({
       return data;
     },
   });
+
+  const bookingQuery = useQuery({
+    queryKey: ["lead-booking-summary", lead?.id],
+    enabled: !!lead,
+    queryFn: async () => {
+      if (!lead) return [];
+      const { data, error } = await supabase.from("deals").select("id,status,agreed_price,booking_date,units:units(unit_number,tower,projects:projects(name)),payment_milestones:payment_milestones(id,name,amount_due,due_date,deal_payments:deal_payments(amount))").eq("lead_id", lead.id).neq("status", "cancelled").order("booking_date", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const activeBooking = bookingQuery.data?.[0];
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["leads"] });
@@ -99,9 +115,12 @@ export function LeadDetail({
   async function scheduleFollowUp() {
     if (!fuDate) return toast.error("Pick a date");
     const when = new Date(`${fuDate}T${fuTime || "10:00"}`);
-    const { error } = await supabase.from("leads").update({ next_follow_up: when.toISOString() }).eq("id", lead!.id);
+    const visit = fuKind === "visit";
+    const upd = visit ? { next_follow_up: when.toISOString(), status: "Site Visit Scheduled" as const } : { next_follow_up: when.toISOString() };
+    const { error } = await supabase.from("leads").update(upd).eq("id", lead!.id);
     if (error) return toast.error(error.message);
-    await log("followup", `Follow-up scheduled for ${format(when, "d MMM yyyy, h:mm a")}${fuRemark ? ` — ${fuRemark}` : ""}`);
+    if (visit && lead!.status !== "Site Visit Scheduled") await log("status", `Status changed from ${lead!.status} to Site Visit Scheduled`);
+    await log("followup", `${visit ? "Site visit" : "Follow-up"} scheduled for ${format(when, "d MMM yyyy, h:mm a")}${fuRemark ? ` — ${fuRemark}` : ""}`);
     toast.success("Follow-up scheduled");
     setFuRemark("");
     setFuDate("");
@@ -163,15 +182,31 @@ export function LeadDetail({
               </div>
             </div>
 
+            {activeBooking && <section className="border-b px-6 py-4" aria-label="Active booking summary">
+              <div className="mb-2 flex items-center justify-between gap-3"><h3 className="text-sm font-semibold">Active booking</h3><span className="badge badge-blue">{activeBooking.status === "agreement_signed" ? "Agreement signed" : activeBooking.status === "registered" ? "Registered" : "Booked"}</span></div>
+              <p className="text-xs text-muted-foreground">{[activeBooking.units?.projects?.name, activeBooking.units?.tower, activeBooking.units?.unit_number].filter(Boolean).join(" · ")}</p>
+              <p className="mt-1 text-sm font-medium">Agreed {formatBudget(Number(activeBooking.agreed_price))}</p>
+              {(() => {
+                const stages = activeBooking.payment_milestones ?? [];
+                const collected = stages.reduce((sum, stage) => sum + (stage.deal_payments ?? []).reduce((stageSum, payment) => stageSum + Number(payment.amount), 0), 0);
+                const next = stages.find((stage) => {
+                  const amountPaid = (stage.deal_payments ?? []).reduce((sum, payment) => sum + Number(payment.amount), 0);
+                  return getMilestoneState(Number(stage.amount_due), amountPaid, stage.due_date) !== "Paid";
+                });
+                return <><p className="mt-1 text-xs text-muted-foreground">Collected {formatBudget(collected)} · Balance {formatBudget(Math.max(0, Number(activeBooking.agreed_price) - collected))}</p>{next && <p className="mt-1 text-xs text-muted-foreground">Next: {next.name} · {formatBudget(Math.max(0, Number(next.amount_due) - (next.deal_payments ?? []).reduce((sum, payment) => sum + Number(payment.amount), 0)))}</p>}</>;
+              })()}
+              <Button asChild variant="link" size="sm" className="mt-1 h-auto px-0"><Link to="/deals" search={{ leadId: undefined, unitId: undefined, dealId: activeBooking.id }}>Open booking</Link></Button>
+            </section>}
+
             <Tabs defaultValue="timeline" className="px-6 py-4">
               <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b bg-transparent p-0">
-                {["timeline", "followup", "edit"].map((t) => (
+                {["timeline", "followup", "units", "edit"].map((t) => (
                   <TabsTrigger
                     key={t}
                     value={t}
                     className="rounded-none border-b-2 border-transparent px-0 pb-2 capitalize shadow-none data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                   >
-                    {t === "followup" ? "Follow-up" : t === "edit" ? "Edit details" : "Timeline"}
+                    {t === "followup" ? "Follow-up" : t === "edit" ? "Edit details" : t === "units" ? "Units" : "Timeline"}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -219,14 +254,25 @@ export function LeadDetail({
                     Next follow-up: <strong>{format(new Date(lead.next_follow_up), "EEE, d MMM yyyy · h:mm a")}</strong>
                   </p>
                 )}
+                <div className="flex gap-2">
+                  {(["call", "visit"] as const).map((k) => (
+                    <Button key={k} type="button" size="sm" variant={fuKind === k ? "default" : "outline"} onClick={() => setFuKind(k)}>
+                      {k === "call" ? "Follow-up call" : "Site visit"}
+                    </Button>
+                  ))}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input type="date" value={fuDate} onChange={(e) => setFuDate(e.target.value)} />
                   <Input type="time" value={fuTime} onChange={(e) => setFuTime(e.target.value)} />
                 </div>
-                <Textarea value={fuRemark} onChange={(e) => setFuRemark(e.target.value)} placeholder="Remark (e.g. share brochure, confirm site visit)" rows={2} />
+                <Textarea value={fuRemark} onChange={(e) => setFuRemark(e.target.value)} placeholder={fuKind === "visit" ? "Site / project and notes" : "Remark (e.g. share brochure)"} rows={2} />
                 <Button className="bg-gold text-gold-foreground hover:bg-gold/90" onClick={scheduleFollowUp}>
-                  <CalendarClock className="mr-1.5 h-4 w-4" /> Schedule follow-up
+                  <CalendarClock className="mr-1.5 h-4 w-4" /> {fuKind === "visit" ? "Schedule site visit" : "Schedule follow-up"}
                 </Button>
+              </TabsContent>
+
+              <TabsContent value="units" className="mt-5">
+                <LeadUnits leadId={lead.id} meId={me.id} />
               </TabsContent>
 
               <TabsContent value="edit" className="mt-5 space-y-5">

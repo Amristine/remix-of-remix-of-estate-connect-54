@@ -26,9 +26,9 @@ export const Route = createFileRoute("/_authenticated/data")({
   validateSearch: (s: Record<string, unknown>): Search => ({ q: typeof s.q === "string" ? s.q : undefined }),
   head: () => ({
     meta: [
-      { title: "Data Pool — Estatery CRM" },
+      { title: "Data Pool — Bhangar Estates CRM" },
       { name: "description", content: "Import, assign and qualify cold contact data." },
-      { property: "og:title", content: "Data Pool — Estatery CRM" },
+      { property: "og:title", content: "Data Pool — Bhangar Estates CRM" },
       { property: "og:description", content: "Import, assign and qualify cold contact data." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

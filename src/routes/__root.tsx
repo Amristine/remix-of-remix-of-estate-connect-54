@@ -60,9 +60,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Estatery CRM — Leads & Data for Real Estate Teams" },
+      { title: "Bhangar Estates CRM — Leads & Data for Real Estate Teams" },
       { name: "description", content: "A calm, focused CRM for real estate sales teams to manage leads and cold data." },
-      { property: "og:title", content: "Estatery CRM" },
+      { property: "og:title", content: "Bhangar Estates CRM" },
       { property: "og:description", content: "Manage real estate leads and cold data in one calm workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

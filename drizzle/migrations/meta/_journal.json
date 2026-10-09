@@ -1,5 +1,27 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791261913060,
+      "tag": "0000_deal_bookings_and_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791261937830,
+      "tag": "0001_deal_status_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791431797925,
+      "tag": "0002_reschedule_payment_milestone",
+      "breakpoints": true
+    }
+  ]
 }

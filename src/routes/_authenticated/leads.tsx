@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { Plus, Download, Users, X } from "lucide-react";
+import { Plus, Download, Users, X, List, Columns3 } from "lucide-react";
+import { LeadKanban } from "@/components/crm/LeadKanban";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe, useProfiles, type Me, type Profile } from "@/lib/auth";
 import {
@@ -34,9 +35,9 @@ export const Route = createFileRoute("/_authenticated/leads")({
   validateSearch: (s: Record<string, unknown>): Search => ({ q: typeof s.q === "string" ? s.q : undefined }),
   head: () => ({
     meta: [
-      { title: "Leads — Estatery CRM" },
+      { title: "Leads — Bhangar Estates CRM" },
       { name: "description", content: "Track, assign and follow up on real estate leads." },
-      { property: "og:title", content: "Leads — Estatery CRM" },
+      { property: "og:title", content: "Leads — Bhangar Estates CRM" },
       { property: "og:description", content: "Track, assign and follow up on real estate leads." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -74,6 +75,14 @@ function LeadsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [view, setView] = useState<"table" | "board">("table");
+  useEffect(() => {
+    if (localStorage.getItem("leadsView") === "board") setView("board");
+  }, []);
+  const switchView = (v: "table" | "board") => {
+    setView(v);
+    localStorage.setItem("leadsView", v);
+  };
 
   // Everything except status filter — used for chip counts
   const baseFiltered = useMemo(() => {
@@ -157,6 +166,14 @@ function LeadsPage() {
         subtitle={me?.isAdmin ? "Every enquiry across your team." : "Leads assigned to you."}
         actions={
           <>
+            <div className="flex rounded-md border bg-card p-0.5">
+              <Button size="sm" variant={view === "table" ? "secondary" : "ghost"} className="h-8" onClick={() => switchView("table")}>
+                <List className="mr-1.5 h-4 w-4" /> Table
+              </Button>
+              <Button size="sm" variant={view === "board" ? "secondary" : "ghost"} className="h-8" onClick={() => switchView("board")}>
+                <Columns3 className="mr-1.5 h-4 w-4" /> Pipeline
+              </Button>
+            </div>
             <Button variant="outline" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Export CSV
             </Button>
@@ -236,6 +253,17 @@ function LeadsPage() {
         </div>
       )}
 
+      {view === "board" ? (
+        <LeadKanban
+          leads={baseFiltered}
+          profiles={profiles}
+          onOpen={setOpenId}
+          onMove={(id, s) => {
+            qc.setQueryData<Lead[]>(["leads"], (old) => old?.map((l) => (l.id === id ? { ...l, status: s } : l)));
+            changeStatus([id], s);
+          }}
+        />
+      ) : (
       <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
         <div className="max-h-[calc(100vh-360px)] min-h-[300px] overflow-auto">
           <table className="w-full min-w-[1300px] text-sm">
@@ -310,6 +338,7 @@ function LeadsPage() {
         </div>
         <Pager page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage} />
       </div>
+      )}
 
       {me && <AddLeadDrawer open={adding} onClose={() => setAdding(false)} profiles={profiles} me={me} />}
       {me && <LeadDetail lead={openLead} onClose={() => setOpenId(null)} profiles={profiles} me={me} />}

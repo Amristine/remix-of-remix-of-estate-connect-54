@@ -18,9 +18,9 @@ import { EmptyState, PageHeader, tableHead, tableRow } from "@/components/crm/co
 export const Route = createFileRoute("/_authenticated/forms")({
   head: () => ({
     meta: [
-      { title: "Lead Forms — Estatery CRM" },
+      { title: "Lead Forms — Bhangar Estates CRM" },
       { name: "description", content: "Create a lead form per ad platform and track where every lead comes from." },
-      { property: "og:title", content: "Lead Forms — Estatery CRM" },
+      { property: "og:title", content: "Lead Forms — Bhangar Estates CRM" },
       { property: "og:description", content: "Create a lead form per ad platform and track where every lead comes from." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

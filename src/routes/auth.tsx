@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +10,9 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Estatery CRM" },
+      { title: "Sign in — Bhangar Estates CRM" },
       { name: "description", content: "Sign in to your real estate CRM workspace." },
-      { property: "og:title", content: "Sign in — Estatery CRM" },
+      { property: "og:title", content: "Sign in — Bhangar Estates CRM" },
       { property: "og:description", content: "Sign in to your real estate CRM workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -29,32 +28,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/leads" });
-    });
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) navigate({ to: "/leads" });
-    });
-    return () => data.subscription.unsubscribe();
-  }, [navigate]);
-
-  async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
-    if (result.error) return toast.error(String((result.error as Error).message ?? result.error));
-    if (result.redirected) return;
-    navigate({ to: "/leads" });
-  }
-
-  async function forgot() {
-    if (!email) return toast.error("Enter your email above first.");
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Password reset link sent to your email.");
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,13 +62,13 @@ function AuthPage() {
       <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-2 text-sidebar-accent-foreground">
           <Building2 className="h-6 w-6 text-gold" />
-          <span className="font-sans text-xl font-semibold">Estatery</span>
+          <span className="font-sans text-xl font-semibold">Bhangar Estates</span>
         </div>
         <div>
           <p className="font-sans text-4xl font-semibold leading-tight text-sidebar-accent-foreground">Every enquiry,<br />carefully followed through.</p>
           <p className="mt-4 max-w-sm text-sm">Leads and cold data for your sales team — nothing more, nothing less.</p>
         </div>
-        <p className="text-xs opacity-60">© {new Date().getFullYear()} Estatery</p>
+        <p className="text-xs opacity-60">© {new Date().getFullYear()} Bhangar Estates</p>
       </div>
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
@@ -119,16 +92,8 @@ function AuthPage() {
             <Label htmlFor="pw">Password</Label>
             <Input id="pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-          {mode === "in" && (
-            <button type="button" className="text-sm text-gold hover:underline" onClick={forgot}>
-              Forgot password?
-            </button>
-          )}
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "Please wait…" : mode === "in" ? "Sign in" : "Create account"}
-          </Button>
-          <Button type="button" variant="outline" className="w-full" onClick={google}>
-            Continue with Google
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {mode === "in" ? "New here?" : "Already have an account?"}{" "}

@@ -36,6 +36,9 @@ export const STATUS_TONE: Record<string, string> = {
   "Not Reachable": "badge-amber",
   "Wrong Number": "badge-red",
   Converted: "badge-gold",
+  Available: "badge-green",
+  Blocked: "badge-amber",
+  Sold: "badge-red",
 };
 
 /**

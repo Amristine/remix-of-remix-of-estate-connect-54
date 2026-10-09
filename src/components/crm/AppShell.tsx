@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { Building2, Users, Database, FileText, Search, Menu, LogOut, Moon, Sun } from "lucide-react";
+import { Building2, Building, BarChart3, Users, Database, FileText, CalendarDays, Search, Menu, LogOut, Moon, Sun, Handshake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
 import { initials, cn } from "@/lib/crm-ui";
@@ -17,9 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Reminders } from "./Reminders";
 
 const NAV = [
   { to: "/leads", label: "Leads", icon: Users },
+  { to: "/inventory", label: "Inventory", icon: Building },
+  { to: "/deals", label: "Deals", icon: Handshake },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/data", label: "Data", icon: Database },
   { to: "/forms", label: "Lead Forms", icon: FileText },
 ] as const;
@@ -30,7 +35,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-2 px-6">
         <Building2 className="h-5 w-5 text-gold" />
-        <span className="font-sans text-xl font-semibold text-sidebar-accent-foreground">Estatery</span>
+        <span className="font-sans text-xl font-semibold text-sidebar-accent-foreground">Bhangar Estates</span>
       </div>
       <nav className="mt-4 flex flex-col gap-1 px-3">
         {NAV.map(({ to, label, icon: Icon }) => {
@@ -111,6 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </form>
           <div className="ml-auto flex items-center gap-2">
+            <Reminders />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">

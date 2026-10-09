@@ -1,4 +1,4 @@
-# Remix of Estate Connect
+# Remix of Remix of Estate Connect
 
 Build a lightweight CRM web app for a real estate sales team, inspired by LeadRat. 
 It must have ONLY two main pages: "Leads" and "Data". No dashboard, no billing, 
@@ -80,7 +80,7 @@ This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9c07abe8-a0ba-4a7a-af10-d7775a1da275).
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/0d2a0a11-80f7-45e3-af9a-4e39b0811b69).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
 - **Stay in sync**: every change made in Lovable is committed straight to this repository.

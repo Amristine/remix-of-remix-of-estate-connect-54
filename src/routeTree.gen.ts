@@ -12,9 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedDataRouteImport } from './routes/_authenticated/data'
+import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedFormsRouteImport } from './routes/_authenticated/forms'
+import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as FFormIdRouteImport } from './routes/f.$formId'
 
@@ -32,19 +35,34 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDataRoute = AuthenticatedDataRouteImport.update({
   id: '/data',
   path: '/data',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDealsRoute = AuthenticatedDealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFormsRoute = AuthenticatedFormsRouteImport.update({
   id: '/forms',
   path: '/forms',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
@@ -61,18 +79,24 @@ const FFormIdRoute = FFormIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/reset-password': typeof ResetPasswordRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/data': typeof AuthenticatedDataRoute
+  '/deals': typeof AuthenticatedDealsRoute
   '/forms': typeof AuthenticatedFormsRoute
+  '/inventory': typeof AuthenticatedInventoryRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/f/$formId': typeof FFormIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/reset-password': typeof ResetPasswordRoute
+  '/analytics': typeof AuthenticatedAnalyticsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/data': typeof AuthenticatedDataRoute
+  '/deals': typeof AuthenticatedDealsRoute
   '/forms': typeof AuthenticatedFormsRoute
+  '/inventory': typeof AuthenticatedInventoryRoute
   '/leads': typeof AuthenticatedLeadsRoute
   '/f/$formId': typeof FFormIdRoute
 }
@@ -81,9 +105,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/data': typeof AuthenticatedDataRoute
+  '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/forms': typeof AuthenticatedFormsRoute
+  '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/f/$formId': typeof FFormIdRoute
 }
@@ -92,18 +119,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/reset-password'
+    | '/analytics'
+    | '/calendar'
     | '/data'
+    | '/deals'
     | '/forms'
+    | '/inventory'
     | '/leads'
     | '/f/$formId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
-    | '/reset-password'
+    | '/analytics'
+    | '/calendar'
     | '/data'
+    | '/deals'
     | '/forms'
+    | '/inventory'
     | '/leads'
     | '/f/$formId'
   id:
@@ -111,9 +144,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
-    | '/reset-password'
+    | '/_authenticated/analytics'
+    | '/_authenticated/calendar'
     | '/_authenticated/data'
+    | '/_authenticated/deals'
     | '/_authenticated/forms'
+    | '/_authenticated/inventory'
     | '/_authenticated/leads'
     | '/f/$formId'
   fileRoutesById: FileRoutesById
@@ -122,7 +158,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   FFormIdRoute: typeof FFormIdRoute
 }
 
@@ -149,12 +184,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/data': {
       id: '/_authenticated/data'
@@ -163,11 +205,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDataRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deals': {
+      id: '/_authenticated/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof AuthenticatedDealsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/forms': {
       id: '/_authenticated/forms'
       path: '/forms'
       fullPath: '/forms'
       preLoaderRoute: typeof AuthenticatedFormsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory': {
+      id: '/_authenticated/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AuthenticatedInventoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads': {
@@ -188,14 +244,22 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDataRoute: typeof AuthenticatedDataRoute
+  AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedFormsRoute: typeof AuthenticatedFormsRoute
+  AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDataRoute: AuthenticatedDataRoute,
+  AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedFormsRoute: AuthenticatedFormsRoute,
+  AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
 }
 
@@ -206,7 +270,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   FFormIdRoute: FFormIdRoute,
 }
 export const routeTree = rootRouteImport

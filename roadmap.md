@@ -1,0 +1,11 @@
+- [x] Improve Analytics page responsiveness on mobile and desktop.
+- [x] Refresh chart layout, colors, and tooltip styling.
+- [x] Rename Absorption to Inventory sold and Pipeline to Inquiries.
+- [x] Replace generic analytics bars with executive horizontal cards and segmented meters.
+- [x] Verify the redesigned analytics page has no build or runtime errors.
+- [x] Apply the chosen lead-source chart style and white empty tracks to all Analytics charts; verified visually with sample data at 390px, 695px, and desktop widths (live account check requires sign-in).
+- [x] Add transactional deal bookings, construction-linked milestones, payment receipts, overdue balances, and the authenticated Deals page.
+- [x] Add Deals search, status filtering, cancelled-booking visibility, and CSV export.
+- [x] Add pre-filled booking shortcuts from Lead Units and Inventory, plus a booking summary in the lead drawer.
+- [x] Allow authorized users to reschedule milestone due dates.
+- [x] Verify the updated Deals workflow, tests, and current preview build.

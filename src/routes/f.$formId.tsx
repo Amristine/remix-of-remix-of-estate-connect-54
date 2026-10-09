@@ -10,9 +10,9 @@ export const Route = createFileRoute("/f/$formId")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Enquire Now — Estatery" },
+      { title: "Enquire Now — Bhangar Estates" },
       { name: "description", content: "Share your details and our team will call you back shortly." },
-      { property: "og:title", content: "Enquire Now — Estatery" },
+      { property: "og:title", content: "Enquire Now — Bhangar Estates" },
       { property: "og:description", content: "Share your details and our team will call you back shortly." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -61,7 +61,7 @@ function PublicForm() {
       <div className="w-full max-w-md rounded-xl border bg-card p-8 shadow-soft">
         <div className="mb-6 flex items-center gap-2">
           <Building2 className="h-5 w-5 text-gold" />
-          <span className="font-sans text-lg font-semibold">Estatery</span>
+          <span className="font-sans text-lg font-semibold">Bhangar Estates</span>
         </div>
         {state === "loading" && <p className="text-helper">Loading…</p>}
         {state === "closed" && <p className="text-sm text-muted-foreground">This form is no longer accepting responses.</p>}
