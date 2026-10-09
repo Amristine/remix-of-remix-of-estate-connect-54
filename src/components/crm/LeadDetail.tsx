@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { Phone, MessageCircle, Mail, MapPin, StickyNote, CalendarClock, PhoneCall, RefreshCw, Sparkles } from "lucide-react";
+import { Phone, MessageCircle, MessageSquare, Mail, MapPin, StickyNote, CalendarClock, PhoneCall, RefreshCw, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { formatPhone, formatBudget } from "@/lib/crm";
@@ -23,6 +23,9 @@ import { getMilestoneState } from "@/lib/deals";
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   note: StickyNote,
   call: PhoneCall,
+  whatsapp: MessageCircle,
+  sms: MessageSquare,
+  email: Mail,
   status: RefreshCw,
   followup: CalendarClock,
   system: Sparkles,
@@ -107,8 +110,8 @@ export function LeadDetail({
     refresh();
   }
 
-  async function logCall() {
-    await log("call", "Call placed");
+  async function logContact(type: string, label: string) {
+    await log(type, type === "call" ? "Call placed" : `${label} opened`);
     refresh();
   }
 
@@ -142,27 +145,33 @@ export function LeadDetail({
                   </div>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="sm" onClick={logCall}>
-                      <a href={`tel:+91${lead.phone}`}>
-                        <Phone className="mr-1.5 h-4 w-4" /> Call
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Call {formatPhone(lead.phone)}</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild size="sm" variant="outline">
-                      <a href={`https://wa.me/91${lead.phone}`} target="_blank" rel="noreferrer">
-                        <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Open WhatsApp chat</TooltipContent>
-                </Tooltip>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(() => {
+                  const count = (t: string) => activities.data?.filter((a) => a.type === t).length ?? 0;
+                  const items = [
+                    { type: "call", label: "Call", icon: Phone, href: `tel:+91${lead.phone}`, tip: `Call ${formatPhone(lead.phone)}`, primary: true },
+                    { type: "whatsapp", label: "WhatsApp", icon: MessageCircle, href: `https://wa.me/91${lead.phone}`, tip: "Open WhatsApp chat", external: true },
+                    { type: "sms", label: "SMS", icon: MessageSquare, href: `sms:+91${lead.phone}`, tip: "Send SMS" },
+                    ...(lead.email ? [{ type: "email", label: "Email", icon: Mail, href: `mailto:${lead.email}`, tip: `Email ${lead.email}` }] : []),
+                  ];
+                  return items.map((it) => {
+                    const n = count(it.type);
+                    const Icon = it.icon;
+                    return (
+                      <Tooltip key={it.type}>
+                        <TooltipTrigger asChild>
+                          <Button asChild size="sm" variant={it.primary ? "default" : "outline"} onClick={() => logContact(it.type, it.label)}>
+                            <a href={it.href} {...(it.external ? { target: "_blank", rel: "noreferrer" } : {})}>
+                              <Icon className="mr-1.5 h-4 w-4" /> {it.label}
+                              {n > 0 && <span className="ml-1.5 rounded-full bg-gold/20 px-1.5 text-xs font-semibold tabular-nums">{n}</span>}
+                            </a>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{it.tip} · used {n} {n === 1 ? "time" : "times"}</TooltipContent>
+                      </Tooltip>
+                    );
+                  });
+                })()}
               </div>
             </SheetHeader>
 
