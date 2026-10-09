@@ -1,3 +1,18 @@
+DO $$ BEGIN CREATE TYPE public.unit_status AS ENUM ('Available','Blocked','Sold'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS public.projects (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), name text NOT NULL, location text, description text, created_by uuid, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.projects TO authenticated;
+GRANT ALL ON public.projects TO service_role;
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "projects read" ON public.projects FOR SELECT TO authenticated USING (true);
+CREATE POLICY "projects admin write" ON public.projects FOR ALL TO authenticated USING (public.has_role(auth.uid(),'admin'::app_role)) WITH CHECK (public.has_role(auth.uid(),'admin'::app_role));
+CREATE TABLE IF NOT EXISTS public.units (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), project_id uuid NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE, tower text, unit_number text NOT NULL, unit_type public.property_type, sqft numeric, price numeric, status public.unit_status NOT NULL DEFAULT 'Available', lead_id uuid REFERENCES public.leads(id) ON DELETE SET NULL, notes text, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.units TO authenticated;
+GRANT ALL ON public.units TO service_role;
+ALTER TABLE public.units ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "units read" ON public.units FOR SELECT TO authenticated USING (true);
+CREATE POLICY "units admin write" ON public.units FOR ALL TO authenticated USING (public.has_role(auth.uid(),'admin'::app_role)) WITH CHECK (public.has_role(auth.uid(),'admin'::app_role));
+CREATE POLICY "units caller update" ON public.units FOR UPDATE TO authenticated USING (lead_id IS NULL OR EXISTS (SELECT 1 FROM public.leads l WHERE l.id = units.lead_id AND l.assigned_to = auth.uid()));
+--> statement-breakpoint
 CREATE TABLE public.deals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   lead_id uuid NOT NULL REFERENCES public.leads(id) ON DELETE RESTRICT,
