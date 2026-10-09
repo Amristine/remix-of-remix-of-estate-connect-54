@@ -59,7 +59,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Meter({ value, max, color = "bg-primary" }: { value: number; max: number; color?: string }) {
   const width = max ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
-    <div className="h-3 overflow-hidden rounded-full border bg-chart-empty" aria-hidden="true">
+    <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
       <div className={`h-full rounded-full motion-safe:transition-[width] motion-safe:duration-500 ${color}`} style={{ width: `${width}%` }} />
     </div>
   );
@@ -74,7 +74,6 @@ function LeadSourceChart({ rows }: { rows: SourceRow[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <span>Inquiry volume</span>
         <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-1.5 font-semibold"><i className="size-2.5 rounded-full bg-primary" /> Total</span>
           <span className="inline-flex items-center gap-1.5 font-semibold"><i className="size-2.5 rounded-full bg-gold" /> Booked</span>
         </div>
       </div>
@@ -94,13 +93,12 @@ function LeadSourceChart({ rows }: { rows: SourceRow[] }) {
               </div>
             </div>
             <div
-              className="relative h-3 overflow-hidden rounded-full border bg-chart-empty"
+              className="relative h-1.5 overflow-hidden rounded-full bg-muted"
               role="img"
               aria-label={`${row.name}: ${row.total} inquiries, ${row.booked} booked, ${row.rate}% conversion`}
               title={`${row.total} inquiries, ${row.booked} booked; longest bar = ${max} inquiries`}
             >
-              {row.total > 0 && <div className="absolute inset-y-0 left-0 rounded-full bg-primary motion-safe:transition-[width] motion-safe:duration-500" style={{ width: `${(row.total / max) * 100}%` }} />}
-              {row.booked > 0 && <div className="absolute inset-y-0 left-0 rounded-full bg-gold motion-safe:transition-[width] motion-safe:duration-500" style={{ width: `${(row.booked / max) * 100}%` }} />}
+              {row.booked > 0 && <div className="absolute inset-y-0 left-0 rounded-full bg-gold motion-safe:transition-[width] motion-safe:duration-500" style={{ width: `${(row.booked / row.total) * 100}%` }} />}
             </div>
           </div>
         ))
@@ -311,7 +309,7 @@ function InventorySoldChart({ rows }: { rows: { name: string; Sold: number; Bloc
               <p className="text-xs text-muted-foreground tabular-nums">{row.total} units</p>
             </div>
             <div className="col-span-2 row-start-2 space-y-1.5 sm:col-span-1 sm:row-start-auto" title={`${row.Sold} sold, ${row.Blocked} blocked, ${row.Available} available`}>
-              <div className="flex h-3 overflow-hidden rounded-full border bg-chart-empty">
+              <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
                 {row.Sold > 0 && <div className="bg-gold" style={{ width: `${(row.Sold / max) * 100}%` }} />}
                 {row.Blocked > 0 && <div className="bg-muted-foreground" style={{ width: `${(row.Blocked / max) * 100}%` }} />}
                 {row.Available > 0 && <div className="bg-primary" style={{ width: `${(row.Available / max) * 100}%` }} />}
