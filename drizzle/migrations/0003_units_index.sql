@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS units_project_idx ON public.units(project_id);
