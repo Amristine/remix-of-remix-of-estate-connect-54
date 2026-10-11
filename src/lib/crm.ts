@@ -1,6 +1,7 @@
 export const LEAD_STATUSES = [
   "New",
   "Contacted",
+  "Callback",
   "Interested",
   "Site Visit Scheduled",
   "Site Visit Done",
@@ -24,6 +25,7 @@ export type DataStatus = (typeof DATA_STATUSES)[number];
 export const STATUS_TONE: Record<string, string> = {
   New: "badge-blue",
   Contacted: "badge-slate",
+  Callback: "badge-amber",
   Interested: "badge-teal",
   "Site Visit Scheduled": "badge-violet",
   "Site Visit Done": "badge-indigo",

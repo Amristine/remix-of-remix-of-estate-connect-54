@@ -28,6 +28,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { EmptyState, FilterSelect, PageHeader, Pager, StatusBadge, UserName, tableHead, tableRow } from "@/components/crm/common";
 import { LeadFields, emptyLead, validateLead, type Lead, type LeadFormValues } from "@/components/crm/LeadForm";
 import { LeadDetail } from "@/components/crm/LeadDetail";
+import { CALL_OUTCOMES, parseCallOutcome } from "@/components/crm/CallLogDialog";
 
 type Search = { q?: string };
 
@@ -63,6 +64,17 @@ function LeadsPage() {
     },
   });
 
+  const callsQ = useQuery({
+    queryKey: ["activities", "calls"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("lead_activities").select("lead_id,content,created_at").eq("type", "call").like("content", "Call outcome:%").order("created_at", { ascending: false });
+      if (error) throw error;
+      const m = new Map<string, string>();
+      (data ?? []).forEach((a) => { if (!m.has(a.lead_id)) m.set(a.lead_id, parseCallOutcome(a.content)?.outcome ?? ""); });
+      return m;
+    },
+  });
+  const [callOutcome, setCallOutcome] = useState("");
   const [search, setSearch] = useState(globalQ ?? "");
   useEffect(() => setSearch(globalQ ?? ""), [globalQ]);
   const [status, setStatus] = useState("");
@@ -95,9 +107,13 @@ function LeadsPage() {
       if (from && new Date(l.created_at) < new Date(from)) return false;
       if (to && new Date(l.created_at) > new Date(`${to}T23:59:59`)) return false;
       if (fu && followUpBucket(l.next_follow_up) !== fu) return false;
+      if (callOutcome) {
+        const o = callsQ.data?.get(l.id);
+        if (callOutcome === "__none" ? !!o : o !== callOutcome) return false;
+      }
       return true;
     });
-  }, [leadsQ.data, search, source, assignee, from, to, fu]);
+  }, [leadsQ.data, search, source, assignee, from, to, fu, callOutcome, callsQ.data]);
 
   const filtered = useMemo(() => (status ? baseFiltered.filter((l) => l.status === status) : baseFiltered), [baseFiltered, status]);
   const counts = useMemo(() => {
@@ -106,10 +122,10 @@ function LeadsPage() {
     return c;
   }, [baseFiltered]);
 
-  useEffect(() => setPage(1), [search, status, source, assignee, from, to, fu]);
+  useEffect(() => setPage(1), [search, status, source, assignee, from, to, fu, callOutcome]);
   const pageRows = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const openLead = leadsQ.data?.find((l) => l.id === openId) ?? null;
-  const hasFilters = !!(search || status || source || assignee || from || to || fu);
+  const hasFilters = !!(search || status || source || assignee || from || to || fu || callOutcome);
 
   async function changeStatus(ids: string[], next: LeadStatus) {
     const prev = new Map((leadsQ.data ?? []).map((l) => [l.id, l.status]));
@@ -209,6 +225,13 @@ function LeadsPage() {
             { value: "upcoming", label: "Upcoming" },
           ]}
         />
+        <FilterSelect
+          value={callOutcome}
+          onChange={setCallOutcome}
+          placeholder="Any call outcome"
+          className="w-[170px]"
+          options={[...CALL_OUTCOMES.map((o) => ({ value: o, label: o })), { value: "__none", label: "Not called yet" }]}
+        />
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 w-[150px] bg-card" aria-label="Created from" />
           <span>–</span>
@@ -219,7 +242,7 @@ function LeadsPage() {
             variant="ghost"
             size="sm"
             onClick={() => {
-              setSearch(""); setStatus(""); setSource(""); setAssignee(""); setFrom(""); setTo(""); setFu("");
+              setSearch(""); setStatus(""); setSource(""); setAssignee(""); setFrom(""); setTo(""); setFu(""); setCallOutcome("");
             }}
           >
             <X className="mr-1 h-3.5 w-3.5" /> Clear

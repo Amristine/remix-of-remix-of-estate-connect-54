@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, addMinutes, addHours, addDays, setHours, setMinutes } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Phone, MessageCircle, MessageSquare, Mail, MapPin, StickyNote, CalendarClock, PhoneCall, RefreshCw, Sparkles } from "lucide-react";
+import { Phone, MessageCircle, MessageSquare, Mail, MapPin, StickyNote, CalendarClock, PhoneCall, RefreshCw, Sparkles, Activity, Clock, ClipboardList, Pin, PinOff, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { formatPhone, formatBudget } from "@/lib/crm";
+import { formatPhone, formatBudget, LEAD_STATUSES, type LeadStatus } from "@/lib/crm";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import type { Me, Profile } from "@/lib/auth";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,8 +21,32 @@ import { StatusBadge, UserName } from "./common";
 import { LeadFields, leadToForm, validateLead, type Lead, type LeadFormValues } from "./LeadForm";
 import { LeadUnits } from "./LeadUnits";
 import { getMilestoneState } from "@/lib/deals";
+import { CallLogDialog, parseCallOutcome } from "./CallLogDialog";
+
+function activityMeta(type: string, content: string): { label: string; tone: string } {
+  if (type === "call") {
+    const o = (parseCallOutcome(content)?.outcome ?? "").toLowerCase();
+    if (o.includes("connect") || o.includes("answer")) return { label: "Call · Connected", tone: "badge-green" };
+    if (o.includes("busy")) return { label: "Call · Busy", tone: "badge-amber" };
+    if (o.includes("switch") || o.includes("reach")) return { label: "Call · Not reachable", tone: "badge-amber" };
+    if (o.includes("message") || o.includes("voicemail")) return { label: "Call · Left message", tone: "badge-blue" };
+    if (o.includes("wrong") || o.includes("invalid")) return { label: "Call · Wrong number", tone: "badge-red" };
+    return { label: "Call", tone: "badge-slate" };
+  }
+  const map: Record<string, { label: string; tone: string }> = {
+    whatsapp: { label: "WhatsApp", tone: "badge-teal" },
+    sms: { label: "SMS", tone: "badge-teal" },
+    email: { label: "Email", tone: "badge-blue" },
+    status: { label: "Status change", tone: "badge-violet" },
+    followup: /site visit/i.test(content) ? { label: "Site visit", tone: "badge-indigo" } : { label: "Follow-up", tone: "badge-indigo" },
+    pin: { label: "Pinned note", tone: "badge-gold" },
+    system: { label: "System", tone: "badge-grey" },
+  };
+  return map[type] ?? { label: "Note", tone: "badge-slate" };
+}
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  pin: Pin,
   note: StickyNote,
   call: PhoneCall,
   whatsapp: MessageCircle,
@@ -45,6 +71,13 @@ export function LeadDetail({
   const qc = useQueryClient();
   const [form, setForm] = useState<LeadFormValues | null>(null);
   const [note, setNote] = useState("");
+  const [callLogOpen, setCallLogOpen] = useState(false);
+  const [cbOpen, setCbOpen] = useState(false);
+  const [cbDate, setCbDate] = useState("");
+  const [cbTime, setCbTime] = useState("10:00");
+  const [cbNote, setCbNote] = useState("");
+  const [pinEditing, setPinEditing] = useState(false);
+  const [pinDraft, setPinDraft] = useState("");
   const [fuDate, setFuDate] = useState("");
   const [fuTime, setFuTime] = useState("11:00");
   const [fuRemark, setFuRemark] = useState("");
@@ -99,6 +132,37 @@ export function LeadDetail({
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Lead updated");
+    refresh();
+  }
+
+  async function saveCallback() {
+    if (!lead) return;
+    const when = new Date(`${cbDate}T${cbTime}`);
+    if (isNaN(when.getTime())) return toast.error("Pick a valid date & time");
+    const prev = lead.status;
+    const { error } = await supabase.from("leads").update({ status: "Callback", next_follow_up: when.toISOString() }).eq("id", lead.id);
+    if (error) return toast.error(error.message);
+    if (prev !== "Callback") await log("status", `Status changed from ${prev} to Callback`);
+    await log("followup", `Callback scheduled for ${format(when, "d MMM, h:mm a")}${cbNote.trim() ? ` — ${cbNote.trim()}` : ""}`);
+    toast.success(`Callback set for ${format(when, "d MMM, h:mm a")}`);
+    setCbOpen(false);
+    setCbNote("");
+    refresh();
+  }
+
+  async function quickStatus(next: LeadStatus) {
+    if (!lead || next === lead.status) return;
+    const { error } = await supabase.from("leads").update({ status: next }).eq("id", lead.id);
+    if (error) return toast.error(error.message);
+    await log("status", `Status changed from ${lead.status} to ${next}`);
+    toast.success(`Status set to ${next}`);
+    refresh();
+  }
+
+  async function savePin(text: string) {
+    await log("pin", text.trim());
+    setPinEditing(false);
+    toast.success(text.trim() ? "Note pinned" : "Note unpinned");
     refresh();
   }
 
@@ -172,8 +236,136 @@ export function LeadDetail({
                     );
                   });
                 })()}
+                <Button size="sm" variant="outline" onClick={() => setCallLogOpen(true)}>
+                  <ClipboardList className="mr-1.5 h-4 w-4" /> Log call
+                </Button>
               </div>
+              <CallLogDialog open={callLogOpen} onOpenChange={setCallLogOpen} lead={lead} onDone={refresh} />
             </SheetHeader>
+
+            {(() => {
+              const pin = activities.data?.find((a) => a.type === "pin");
+              const text = pin?.content ?? "";
+              if (pinEditing) {
+                return (
+                  <section className="border-b px-6 py-4" aria-label="Pinned note">
+                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gold">
+                      <Pin className="h-4 w-4" /> Key note / objection
+                    </div>
+                    <Input autoFocus maxLength={160} value={pinDraft} onChange={(e) => setPinDraft(e.target.value)} placeholder="e.g. Prefers 3BHK east-facing, budget tight at 1.2 Cr" onKeyDown={(e) => e.key === "Enter" && savePin(pinDraft)} />
+                    <div className="mt-2 flex justify-end gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => setPinEditing(false)}>Cancel</Button>
+                      <Button size="sm" onClick={() => savePin(pinDraft)} disabled={!pinDraft.trim()}>Pin it</Button>
+                    </div>
+                  </section>
+                );
+              }
+              return text ? (
+                <section className="border-b px-6 py-3" aria-label="Pinned note">
+                  <div className="badge-amber flex items-start gap-3 rounded-lg px-4 py-3">
+                    <Pin className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">Key note / objection</p>
+                      <p className="break-words text-sm font-medium">{text}</p>
+                      <p className="mt-1 text-xs opacity-70">
+                        {profiles.find((p) => p.id === pin!.created_by)?.full_name || "Someone"} · {formatDistanceToNow(new Date(pin!.created_at))} ago
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Edit pinned note" onClick={() => { setPinDraft(text); setPinEditing(true); }}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Unpin note" onClick={() => savePin("")}>
+                        <PinOff className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                <div className="border-b px-6 py-2">
+                  <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => { setPinDraft(""); setPinEditing(true); }}>
+                    <Pin className="mr-1.5 h-4 w-4" /> Add key note or objection
+                  </Button>
+                </div>
+              );
+            })()}
+
+            <section className="border-b px-6 py-4" aria-label="Lead status">
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gold">
+                <Activity className="h-4 w-4" /> Lead status
+              </div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 space-y-2.5 text-sm">
+                  <div className="flex items-start gap-2.5">
+                    <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="font-semibold">{lead.status}</span>
+                  </div>
+                  {lead.next_follow_up && (
+                    <div className="flex items-center gap-2.5">
+                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span>{format(new Date(lead.next_follow_up), "d MMM, yyyy | h:mm a")}</span>
+                    </div>
+                  )}
+                  {(() => {
+                    const call = activities.data?.map((a) => ({ a, p: a.type === "call" ? parseCallOutcome(a.content) : null })).find((x) => x.p);
+                    return call?.p ? (
+                      <div className="flex items-start gap-2.5">
+                        <PhoneCall className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="break-words">
+                          <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs font-semibold">{call.p.outcome}</span>{" "}
+                          <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(call.a.created_at))} ago</span>
+                          {call.p.detail && <span className="mt-1 block">{call.p.detail}</span>}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {(() => {
+                    const latest = activities.data?.find((a) => a.type === "note" || a.type === "followup");
+                    return latest ? (
+                      <div className="flex items-start gap-2.5">
+                        <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="break-words">{latest.content}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+                <Select value={lead.status} onValueChange={(v) => (v === "Callback" ? setCbOpen(true) : quickStatus(v as LeadStatus))}>
+                  <SelectTrigger className="h-auto w-auto shrink-0 rounded-full border-0 bg-primary px-5 py-2 text-sm font-medium text-primary-foreground [&>svg]:hidden">
+                    Change status
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Dialog open={cbOpen} onOpenChange={setCbOpen}>
+                  <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>When to call back?</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { l: "In 30 min", d: () => addMinutes(new Date(), 30) },
+                        { l: "In 2 hrs", d: () => addHours(new Date(), 2) },
+                        { l: "Tomorrow 10 AM", d: () => setMinutes(setHours(addDays(new Date(), 1), 10), 0) },
+                      ].map((c) => (
+                        <Button key={c.l} type="button" variant="outline" size="sm" className="rounded-full"
+                          onClick={() => { const d = c.d(); setCbDate(format(d, "yyyy-MM-dd")); setCbTime(format(d, "HH:mm")); }}>
+                          {c.l}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input type="date" value={cbDate} onChange={(e) => setCbDate(e.target.value)} />
+                      <Input type="time" value={cbTime} onChange={(e) => setCbTime(e.target.value)} />
+                    </div>
+                    <Input placeholder="Note (optional)" value={cbNote} onChange={(e) => setCbNote(e.target.value)} />
+                    <Button disabled={!cbDate || !cbTime} onClick={saveCallback}>Save callback</Button>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </section>
 
             <div className="grid grid-cols-2 gap-4 border-b px-6 py-4 text-sm">
               <Info icon={Phone} label="Phone" value={formatPhone(lead.phone)} valueClassName="text-mono-tabular text-xs" />
@@ -239,12 +431,14 @@ export function LeadDetail({
                   <ol className="relative ml-3 border-l">
                     {activities.data?.map((a) => {
                       const Icon = ICONS[a.type] ?? StickyNote;
+                      const meta = activityMeta(a.type, a.content);
                       return (
                         <li key={a.id} className="mb-5 ml-6">
-                          <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-gold">
+                          <span className={cn("absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border", meta.tone)}>
                             <Icon className="h-3 w-3" />
                           </span>
-                          <p className="text-sm">{a.content}</p>
+                          <span className={cn("mb-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold", meta.tone)}>{meta.label}</span>
+                          <p className="text-sm">{a.type === "pin" ? (a.content ? `Pinned: ${a.content}` : "Pinned note removed") : a.content}</p>
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(a.created_at), "d MMM yyyy, h:mm a")}
                             {a.created_by && ` · ${profiles.find((p) => p.id === a.created_by)?.full_name ?? ""}`}

@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedCallingReportRouteImport } from './routes/_authenticated/calling-report'
 import { Route as AuthenticatedDataRouteImport } from './routes/_authenticated/data'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedFormsRouteImport } from './routes/_authenticated/forms'
@@ -45,6 +46,12 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCallingReportRoute =
+  AuthenticatedCallingReportRouteImport.update({
+    id: '/calling-report',
+    path: '/calling-report',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDataRoute = AuthenticatedDataRouteImport.update({
   id: '/data',
   path: '/data',
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/calling-report': typeof AuthenticatedCallingReportRoute
   '/data': typeof AuthenticatedDataRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/forms': typeof AuthenticatedFormsRoute
@@ -93,6 +101,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/calendar': typeof AuthenticatedCalendarRoute
+  '/calling-report': typeof AuthenticatedCallingReportRoute
   '/data': typeof AuthenticatedDataRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/forms': typeof AuthenticatedFormsRoute
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
+  '/_authenticated/calling-report': typeof AuthenticatedCallingReportRoute
   '/_authenticated/data': typeof AuthenticatedDataRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/forms': typeof AuthenticatedFormsRoute
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/analytics'
     | '/calendar'
+    | '/calling-report'
     | '/data'
     | '/deals'
     | '/forms'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/analytics'
     | '/calendar'
+    | '/calling-report'
     | '/data'
     | '/deals'
     | '/forms'
@@ -146,6 +158,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/analytics'
     | '/_authenticated/calendar'
+    | '/_authenticated/calling-report'
     | '/_authenticated/data'
     | '/_authenticated/deals'
     | '/_authenticated/forms'
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/calling-report': {
+      id: '/_authenticated/calling-report'
+      path: '/calling-report'
+      fullPath: '/calling-report'
+      preLoaderRoute: typeof AuthenticatedCallingReportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/data': {
       id: '/_authenticated/data'
       path: '/data'
@@ -246,6 +266,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
+  AuthenticatedCallingReportRoute: typeof AuthenticatedCallingReportRoute
   AuthenticatedDataRoute: typeof AuthenticatedDataRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedFormsRoute: typeof AuthenticatedFormsRoute
@@ -256,6 +277,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
+  AuthenticatedCallingReportRoute: AuthenticatedCallingReportRoute,
   AuthenticatedDataRoute: AuthenticatedDataRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedFormsRoute: AuthenticatedFormsRoute,

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
-import { Building2, Building, BarChart3, Users, Database, FileText, CalendarDays, Search, Menu, LogOut, Moon, Sun, Handshake } from "lucide-react";
+import { Building2, Building, BarChart3, PhoneCall, Users, Database, FileText, CalendarDays, Search, Menu, LogOut, Moon, Sun, Handshake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
 import { initials, cn } from "@/lib/crm-ui";
@@ -23,6 +23,7 @@ const NAV = [
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/inventory", label: "Inventory", icon: Building },
   { to: "/deals", label: "Deals", icon: Handshake },
+  { to: "/calling-report", label: "Calling Report", icon: PhoneCall },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/data", label: "Data", icon: Database },

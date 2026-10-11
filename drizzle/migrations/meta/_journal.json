@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1791261913060,
-      "tag": "0000_deal_bookings_and_payments",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1791261937830,
-      "tag": "0001_deal_status_updates",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1791431797925,
-      "tag": "0002_reschedule_payment_milestone",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1791542521206,
-      "tag": "0003_units_index",
+      "when": 1791607169755,
+      "tag": "0000_add_callback_status",
       "breakpoints": true
     }
   ]
